@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wildlife Surveillance System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="main-header">
+            <div class="header-title">
+                <div class="logo-icon">🛡️</div>
+                <h1 class="logo-text">Wildlife Surveillance System</h1>
+            </div>
+            <div class="header-bottom-row">
+            <nav class="nav-tabs">
+                <button class="nav-tab active" id="liveTab" onclick="switchTab('live')">
+                    <span class="tab-dot"></span>
+                    Live Camera
+                </button>
+                <button class="nav-tab" id="uploadTab" onclick="switchTab('upload')">
+                    Image Detection
+                </button>
+                <button class="nav-tab" id="galleryTab" onclick="switchTab('gallery')">
+                     Alerts Gallery
+                </button>
+                <button class="nav-tab" id="recordingsTab" onclick="switchTab('recordings')">
+                     Recordings
+                </button>
+                <button class="nav-tab" id="statsTab" onclick="switchTab('stats')">
+                     Statistics
+                </button>
+            </nav>
+            <div class="header-controls">
+                <div class="live-time-display">
+                    <div class="current-time" id="currentTime">00:00:00</div>
+                    <div class="current-date" id="currentDate">Loading...</div>
+                </div>
+                <div class="uptime-display">
+                    <span class="uptime-label">Uptime:</span>
+                    <span class="uptime-value" id="systemUptime">00:00:00</span>
+                </div>
+                <button id="toggleBtn" class="toggle-btn active" onclick="toggleSystem()">
+                    <span class="toggle-icon">●</span>
+                    <span id="toggleText">System ON</span>
+                </button>
+                <button id="soundToggleBtn" class="sound-toggle-btn active" onclick="toggleSound()">
+                    <span class="sound-icon" id="soundIcon">🔊</span>
+                    <span id="soundText">Sound ON</span>
+                </button>
+            </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Left Panel - Live Camera -->
+            <section class="panel live-panel" id="livePanel">
+                <div class="live-panel-content">
+                    <!-- Left Side - Camera Feed -->
+                    <div class="live-camera-section">
+                        <div class="panel-header">
+                            <span class="panel-icon"></span>
+                            <h2>Live Camera Feeds</h2>
+                            <div class="camera-controls">
+                                <button class="add-camera-btn" onclick="showAddCameraModal()">
+                                    <span>+</span> Add Camera
+                                </button>
+                                <div class="live-indicator">
+                                    <span class="live-dot"></span>
+                                    <span>LIVE</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Live Stats Bar -->
+                        <div class="live-stats-bar">
+                            <div class="stat-item">
+                                <span class="stat-icon">🕐</span>
+                                <span id="liveTime">--:--:--</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-icon">📅</span>
+                                <span id="liveDate">--/--/----</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-icon">⏱️</span>
+                                <span>Session: </span>
+                                <span id="sessionTime">00:00:00</span>
+                            </div>
+                            <div class="stat-item" id="detectionCounter">
+                                <span class="stat-icon">🎯</span>
+                                <span>Detections: </span>
+                                <span id="detectionCount">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-icon">📹</span>
+                                <span>Cameras: </span>
+                                <span id="cameraCount">1</span>
+                            </div>
+                        </div>
+
+                        <!-- Threat Alert Banner -->
+                        <div class="threat-banner hidden" id="threatBanner">
+                            <span class="threat-icon">⚠</span>
+                            <span class="threat-text">THREAT DETECTED</span>
+                        </div>
+
+                        <!-- Multi-Camera Grid -->
+                        <div class="camera-grid" id="cameraGrid">
+                            <!-- Cameras will be dynamically added here -->
+                        </div>
+
+                        <!-- Detected Objects -->
+                        <div class="detected-objects">
+                            <h3>Detected Objects</h3>
+                            <div class="objects-list" id="objectsList">
+                                <p class="no-detection">No objects detected</p>
+                            </div>
+                        </div>
+
+                        <!-- Today's Alerts -->
+                        <div class="alerts-section">
+                            <h3>Today <span class="time-indicator">▲ ago</span></h3>
+                            <div class="alerts-list" id="alertsList">
+                                <p class="no-alerts">No alerts today</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Side - Live Object Counts -->
+                    <div class="live-counts-section">
+                        <h3>Live Detection Counts</h3>
+                        
+                        <div class="counts-grid">
+                            <div class="count-card person">
+                                <div class="count-icon">👤</div>
+                                <div class="count-info">
+                                    <span class="count-value" id="livePersonCount">0</span>
+                                    <span class="count-label">Persons</span>
+                                </div>
+                            </div>
+                            
+                            <div class="count-card car">
+                                <div class="count-icon">🚗</div>
+                                <div class="count-info">
+                                    <span class="count-value" id="liveCarCount">0</span>
+                                    <span class="count-label">Cars</span>
+                                </div>
+                            </div>
+                            
+                            <div class="count-card truck">
+                                <div class="count-icon">🚚</div>
+                                <div class="count-info">
+                                    <span class="count-value" id="liveTruckCount">0</span>
+                                    <span class="count-label">Trucks</span>
+                                </div>
+                            </div>
+                            
+                            <div class="count-card motorcycle">
+                                <div class="count-icon">🏍️</div>
+                                <div class="count-info">
+                                    <span class="count-value" id="liveMotorcycleCount">0</span>
+                                    <span class="count-label">Motorcycles</span>
+                                </div>
+                            </div>
+                            
+                            <div class="count-card bus">
+                                <div class="count-icon">🚌</div>
+                                <div class="count-info">
+                                    <span class="count-value" id="liveBusCount">0</span>
+                                    <span class="count-label">Buses</span>
+                                </div>
+                            </div>
+                            
+                            <div class="count-card bicycle">
+                                <div class="count-icon">🚲</div>
+                                <div class="count-info">
+                                    <span class="count-value" id="liveBicycleCount">0</span>
+                                    <span class="count-label">Bicycles</span>
+                                </div>
+                            </div>
+                            
+                            <div class="count-card animal">
+                                <div class="count-icon">🐾</div>
+                                <div class="count-info">
+                                    <span class="count-value" id="liveAnimalCount">0</span>
+                                    <span class="count-label">Animals</span>
+                                </div>
+                            </div>
+                            
+                            <div class="count-card other">
+                                <div class="count-icon">📦</div>
+                                <div class="count-info">
+                                    <span class="count-value" id="liveOtherCount">0</span>
+                                    <span class="count-label">Other</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="total-detections">
+                            <span class="total-label">Total Objects Detected:</span>
+                            <span class="total-value" id="liveTotalCount">0</span>
+                        </div>
+                        
+                        <div class="detection-status" id="detectionStatus">
+                            <span class="status-dot safe"></span>
+                            <span class="status-text">No Active Threats</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Panel - Upload Detection -->
+            <section class="panel upload-panel" id="uploadPanel" style="display: none;">
+                <div class="panel-header">
+                    <span class="panel-icon"></span>
+                    <h2>Upload an Image for Detection</h2>
+                </div>
+
+                <!-- Upload Area -->
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">⬆</div>
+                    <p>Drag and drop image for image file</p>
+                    <label class="upload-btn">
+                        <span>⬆ Choose File</span>
+                        <input type="file" id="imageInput" accept="image/*" hidden>
+                    </label>
+                </div>
+
+                <!-- Image Preview -->
+                <div class="image-preview hidden" id="imagePreview">
+                    <img id="previewImg" src="" alt="Preview">
+                    <button class="analyze-btn" onclick="analyzeImage()">Upload Image</button>
+                </div>
+
+                <!-- Upload Result -->
+                <div class="upload-result hidden" id="uploadResult"></div>
+
+                <!-- Detected Threats -->
+                <div class="threats-section">
+                    <h3>Detected Threats</h3>
+                    <div class="threats-list" id="threatsList">
+                        <p class="no-threats">No threats detected yet</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Alerts Gallery Panel -->
+            <section class="panel gallery-panel" id="galleryPanel" style="display: none;">
+                <div class="panel-header">
+                    <span class="panel-icon">📸</span>
+                    <h2>Alerts Gallery</h2>
+                    <div class="gallery-controls">
+                        <select id="severityFilter" onchange="filterGallery()">
+                            <option value="all">All Severities</option>
+                            <option value="critical">🔴 Critical</option>
+                            <option value="high">🟠 High</option>
+                            <option value="medium">🟡 Medium</option>
+                            <option value="low">🟢 Low</option>
+                        </select>
+                        <select id="typeFilter" onchange="filterGallery()">
+                            <option value="all">All Types</option>
+                            <option value="person">👤 Person</option>
+                            <option value="car">🚗 Car</option>
+                            <option value="truck">🚛 Truck</option>
+                            <option value="motorcycle">🏍️ Motorcycle</option>
+                        </select>
+                        <button class="refresh-btn" onclick="loadGallery()">🔄 Refresh</button>
+                    </div>
+                </div>
+
+                <!-- Gallery Stats -->
+                <div class="gallery-stats">
+                    <div class="gallery-stat-item">
+                        <span class="gallery-stat-value" id="galleryTotal">0</span>
+                        <span class="gallery-stat-label">Total Alerts</span>
+                    </div>
+                    <div class="gallery-stat-item critical">
+                        <span class="gallery-stat-value" id="galleryCritical">0</span>
+                        <span class="gallery-stat-label">🔴 Critical</span>
+                    </div>
+                    <div class="gallery-stat-item high">
+                        <span class="gallery-stat-value" id="galleryHigh">0</span>
+                        <span class="gallery-stat-label">🟠 High</span>
+                    </div>
+                    <div class="gallery-stat-item medium">
+                        <span class="gallery-stat-value" id="galleryMedium">0</span>
+                        <span class="gallery-stat-label">🟡 Medium</span>
+                    </div>
+                    <div class="gallery-stat-item low">
+                        <span class="gallery-stat-value" id="galleryLow">0</span>
+                        <span class="gallery-stat-label">🟢 Low</span>
+                    </div>
+                </div>
+
+                <!-- Gallery Grid -->
+                <div class="gallery-grid" id="galleryGrid">
+                    <p class="no-alerts">No alert images yet</p>
+                </div>
+
+                <!-- Image Preview Modal -->
+                <div class="image-preview-modal hidden" id="imagePreviewModal">
+                    <div class="image-preview-content">
+                        <button class="preview-close" onclick="closeImagePreview()">×</button>
+                        <img id="previewImage" src="" alt="Alert Preview">
+                        <div class="preview-info">
+                            <h3 id="previewTitle">Detection Details</h3>
+                            <div class="preview-details">
+                                <p><strong>Type:</strong> <span id="previewType"></span></p>
+                                <p><strong>Severity:</strong> <span id="previewSeverity"></span></p>
+                                <p><strong>Confidence:</strong> <span id="previewConfidence"></span></p>
+                                <p><strong>Time:</strong> <span id="previewTime"></span></p>
+                                <p><strong>Camera:</strong> <span id="previewCamera"></span></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Recordings Panel -->
+            <section class="panel recordings-panel" id="recordingsPanel" style="display: none;">
+                <div class="panel-header">
+                    <span class="panel-icon"></span>
+                    <h2>Video Recordings</h2>
+                </div>
+
+                <div class="recordings-info">
+                    <p>Video clips are automatically recorded when threats are detected.</p>
+                </div>
+
+                <!-- Video Player -->
+                <div class="video-player-container hidden" id="videoPlayerContainer">
+                    <video id="videoPlayer" controls>
+                        <source src="" type="video/mp4">
+                        Your browser does not support video playback.
+                    </video>
+                    <button class="close-video-btn" onclick="closeVideoPlayer()">✕ Close</button>
+                </div>
+
+                <!-- Recordings List -->
+                <div class="recordings-list" id="recordingsList">
+                    <p class="no-recordings">No recordings yet</p>
+                </div>
+            </section>
+
+            <!-- Statistics Panel -->
+            <section class="panel stats-panel" id="statsPanel" style="display: none;">
+                <div class="panel-header">
+                    <span class="panel-icon"></span>
+                    <h2>Detection Statistics</h2>
+                    <select id="timeRangeSelect" onchange="updateCharts()">
+                        <option value="daily">Last 7 Days</option>
+                        <option value="weekly">Last 4 Weeks</option>
+                        <option value="monthly">Last 6 Months</option>
+                    </select>
+                </div>
+
+                <!-- Stats Summary Cards -->
+                <div class="stats-summary">
+                    <div class="stat-card">
+                        <div class="stat-card-icon">🎯</div>
+                        <div class="stat-card-info">
+                            <span class="stat-card-value" id="totalDetections">0</span>
+                            <span class="stat-card-label">Total Detections</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-icon">📅</div>
+                        <div class="stat-card-info">
+                            <span class="stat-card-value" id="todayDetections">0</span>
+                            <span class="stat-card-label">Today</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-icon">📆</div>
+                        <div class="stat-card-info">
+                            <span class="stat-card-value" id="weekDetections">0</span>
+                            <span class="stat-card-label">This Week</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-icon">✉️</div>
+                        <div class="stat-card-info">
+                            <span class="stat-card-value" id="emailRate">0%</span>
+                            <span class="stat-card-label">Email Success</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Grid -->
+                <div class="charts-grid">
+                    <div class="chart-container">
+                        <h3>Detection Trends</h3>
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h3>Detection Types</h3>
+                        <canvas id="typeChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h3>Hourly Distribution</h3>
+                        <canvas id="hourlyChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h3>Weekly Comparison</h3>
+                        <canvas id="weeklyChart"></canvas>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Add Camera Modal -->
+    <div id="addCameraModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>📹 Add New Camera</h3>
+                <button class="modal-close" onclick="hideAddCameraModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="cameraName">Camera Name</label>
+                    <input type="text" id="cameraName" placeholder="e.g., Front Gate, Back Yard">
+                </div>
+                <div class="form-group">
+                    <label for="cameraSource">Camera Source</label>
+                    <input type="text" id="cameraSource" placeholder="0, 1, 2 (webcam) or RTSP URL">
+                    <small>Enter webcam index (0, 1, 2...) or IP camera URL</small>
+                </div>
+                <div class="form-group">
+                    <label for="cameraId">Camera ID (optional)</label>
+                    <input type="text" id="cameraId" placeholder="Auto-generated if empty">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="hideAddCameraModal()">Cancel</button>
+                <button class="btn-primary" onclick="addCamera()">Add Camera</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alert Notification Popup -->
+    <div id="alertNotification" class="alert-notification hidden">
+        <div class="alert-content">
+            <div class="alert-header">
+                <span class="alert-icon">🚨</span>
+                <h3>⚠ THREAT DETECTED</h3>
+                <button class="alert-close" onclick="document.getElementById('alertNotification').classList.add('hidden')">×</button>
+            </div>
+            <div id="alertMessage" class="alert-body"></div>
+        </div>
+    </div>
+
+    <!-- Audio Alert -->
+    <audio id="alertSound" preload="auto">
+        <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdH2JkJWPhn1xY1lcZ3WDj5mfo5ySg3NkV1VcaXqLmqWsp6GXi392aF5cZXSGl6WwtrOsnpKEdGZbWF5sgZOjsbu9t6+jlYd3aF5bYXGElKOwtry3r6OVhnZnXVtgboKSoq+2u7evpJWGdmddW2BugZGirra7t6+klYZ2Z11bYG6BkaKutrq3r6SVhnZnXVtgboGRoq62uravpJWGdmdeW2Bug5Kksby+ubKmloh4aV9cYnSFlaWyuby2rqOVhnZnXl1icoKRoK2zuriypZSFdGRbWl5sgZCfq7W5t7CmlYZ2Z15dYnODkp+strq3r6OTgnNjWlpdbX+Nnqq0uLeyqJiJeWlfXGFygo+dqLK3trKomIl5aV9cYXKCj52osra1sqiXiHlpX1xhcoKPnaiytbWyqJeIeWlfXGFygo+dqLG1tLKol4h5aV9cYXKDj52osbS0sqiXiHlpX11hcoOQnqixtLOyqJeJeWpgXmJzhJCfqbK0s7GnloZ1ZlxaX22Aj5yosLO0saiZi3xsYV1hc4OQnqiws7OxqJiJeGdcW15uf4+cprCzsrColoh4aF5dYXKCjpymsLOysKiXiHlpX11hcoKPnKavsrKwp5eIeWlfXWFygo+cprCysrCnl4h5aV9dYXKCj5ymsLKysKeXiHlpX11hcoKPnKaws7KxqJeIeWlfXmFygo+dprCzsrGomIh5aV9eYXKCj52msLOysaiYiXlpYF5hcoSQnqiys7OxqZmKemthX2NzhZCfqLO0s7KpmYt7a2FfY3SGkZ+os7S0sqmZi3xsYl9jdIaRoKmztLOzqpqLfGxiYGR0hpKhqrS1tLOqmox9bmRiZnaHk6KrtbW1s6ubjH5uZGJmd4eToqy2trW0q5uNf29lY2Z4h5OjrLa2tbSsnI2Ab2VjZniIlKOstrW1tKycjYBwZmNnd4iVpK63trW1rZ2OgXBmY2d4iJWkrre2trWunpCAcGZkZ3iIlaWvuLe2ta+ekYFxZ2RoeImWpa+4t7a2r5+RgnJoZGl5iZalr7i4t7awn5GCcmhlaXmJlqavuLe3trCfkYJyaGVpeYqWpq+4t7e2sJ+SgnJoZml6ipemr7m4t7exoJKDc2lmanqKl6ewubi3t7GgkoRzamZqe4uXp7C5uLe3saGThHRqZ2t7jJiot7m4t7iyoZOFdGtobHyMmKi3ube4srKik4V1a2hsfI2YqLe5uLizsqOUhnZsaW18jpmpt7m5uLO0o5WGd21qbX2Om6m4urq4tLSklod3bmpufo+bqri7urm0taSWiHhvbG9/j5yqubu6ubW1pZiIeW9tcH+Qnaq6vLu6tbWll4l6cG5xgJCdq7q8u7q2tqaYinpwb3GAkZ2rury8u7e2p5mLe3FwcYGSnqy7vby7t7aomot7cnFygZKerLu9vLu4tqmajHxzcnKBkp+su728u7i3qpqNfXRzc4KToKy8vr28uLiqmo59dXN0g5Sgrbzqvr26uaubjn52dHWDlaGtvL6+vbq5q5yPf3d1dYSVoa29v7++u7qsnJCAeHZ2hZairu6/v768u6ydjIF5d3aFl6KuvsCuv7y8rZ6OgnpqeIaYo6/AwL+/vb2un4+Demh4h5ijr8DAwL+9va6gkISBe3mImKOvwMHAv769r6CRhIF8eoiZo7DAwcDAv76voZKFgn17iZqksMHBwMC/vrCikoeEfXyKmqWxwcLBwcC/saOTh4R+fYubprLCwsLBwMCyo5SIhX9+jJyns8LCwsHBwLKklYmGgH+NnKe0wsLCwsHBs6WWioeBgI6dqLTDw8LCwcG0ppeLiIGBjp6otcPDw8LCwbWnl4yJgoKPnqm1w8TDw8LBtqiYjYqDg5CfqrbExMPDwsK3qZmOi4SFkaCrt8XFxMTDw7mqm4+MhYWRoay4xcXFxMTEuqubjY2Gh5KhrbjGxsXFxMS7rJyQjoiHk6KuucbGxsXFxbusnZGPiYiUoq66xsbGxcXFvK2ekpCKipWjr7rHx8bGxsW+rp+TkYuLlqSwu8fHx8bGxr+voJSTjIyXpbC8yMjHx8fHwLChk5SMjZinsb3IyMjHx8fBsaKVlY6OmKexvcnJyMjIyMKyopWVj4+ZqLK+ycnJyMjIw7OjlpaQkJqps7/KysrJycnEs6SXl5GRm6m0v8rKysnJycW0pZiYkpKcqrXAy8vKysrKxrWml5mTk52rtcHLy8vKysvHtqeYmpSUn6y2wsvMzMvLy8i4qJmblZWgrLfCzMzMzMzMyLmpmZuWlqGtt8PMzc3MzM3Juqual5eXoq64xM3Nzc3Nzcu7q5ycmJijoq65xM3Ozs7Ozsy8rJydmZmko7m5xc7Pzs7Pz828rZ2enJqmpbq6xs/Qz8/Q0M69rp6fnpunprq7x9DR0NDR0c++r5+goJ2op7u8yNHR0dHS0tC/sKChoaCpqLy9ydLS0tLT09HAsaGioqGqqr2+ytPT09PU1NLBsqKjo6Krq77AytTU1NTV1dPCs6OkpKOsrL/By9XV1dXW1tTDtKSlpaStr8DCzNbW1tbX19XEtaampqWur8HDzdfX19fY2NbFtqenp6avsMHEzdjY2NjZ2dfGt6iop6iwscLFztnZ2dnZ2djHuKmoqamxssLGz9ra2tra2tnIuamqqqqys8PH0Nvb29vb29rJuqurq6uzs8TI0dzc3Nzc3NvKu6ysrKy0tMXJ0t3d3d3e3tzLvK2trq60tcbK097e3t7e397MvK6ur66/","audio/wav">
+    </audio>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
