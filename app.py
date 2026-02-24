@@ -1,6 +1,6 @@
 """
 Wildlife Monitoring System - Main Flask Application
-Real-time AI-powered surveillance for wildlife protection
+Real-time AI-powered surveillance for wildlife protection with multi-camera support, alerting, and analytics.
 """
 
 from flask import Flask, render_template, Response, request, jsonify, send_from_directory
