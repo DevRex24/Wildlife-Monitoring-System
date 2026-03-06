@@ -1,5 +1,5 @@
 """
-Wildlife Monitoring System - Main Flask Application!
+Wildlife Monitoring System - Main Flask Application
 Real-time AI-powered surveillance for wildlife protection with multi-camera support, alerting, and analytics.
 """
 
